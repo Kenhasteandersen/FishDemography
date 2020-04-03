@@ -214,8 +214,8 @@ logaxes <- function(side = bottom,
   }
 } 
 
-makepanellabel <- function(line=-1.1) {
-  mtext(letters[iPlot], side=top, line=line, adj=0.05)
+makepanellabel <- function(label=letters[iPlot], line=-1.1) {
+  mtext(label, side=top, line=line, adj=0.05)
   assign("iPlot", iPlot+1, envir = .GlobalEnv)
 }
 
