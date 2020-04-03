@@ -59,7 +59,7 @@ plotCompareDemography <- function(p=baseparameters(W=5000), F=0.3) {
 plotDemography <- function(p=baseparameters(W=5000)) {
   N = spectrum(p, nGrid=10000) # Calculate spectrum
   
-  age = seq(1,20)
+  #age = seq(1,20)
   w_at_age = weightatage(p, seq(0, 200, length.out = 5000))
   age_at_w = interp1(w_at_age$w, w_at_age$age, N$w)
   # Recruitment at age 1:
@@ -68,7 +68,7 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   cat("Weight at recruitment: ", wRecruitment, '\n')
   N_at_age2 = N$NprR * N$g
 
-  defaultplot(mfcol=c(2,2), oma=c(2,0.4,0.7,0.7))
+  defaultplot(mfcol=c(2,2), oma=c(2,0.4,0.8,0.7))
   
   #
   # Age based:
@@ -96,7 +96,7 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   wa = weightatage(p, ages=seq(0,100,length.out = 100))
   weights = c(10,1000,3000,4000,4700)
   ages = interp1(wa$w, wa$age, weights)
-  axis(side=bottom, line=2.5,
+  axis(side=bottom, line=2.3,
        at=ages,
        labels=FALSE)
   mtext("Weight (g)", side=bottom, line=3, at=13, adj=1)
@@ -127,9 +127,9 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   # Make additional age-axis:
   #
   # Axis with ages:
-  wa = weightatage(p, ages=age)
-  axis(side=bottom, line=2.5,
-       at=wa$w,
+  wa = weightatage(p, ages=seq(0,20))
+  axis(side=bottom, line=2.3,
+       at=wa$w[2:length(wa$w)],
        labels=FALSE, col=colAgebased)
   mtext("Age      ", side=bottom, line=3, at=6e2, adj=1, col="blue")
   # Remove superfluous age-labels:
@@ -144,9 +144,9 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   }
   wa = wa[1:dim(wa)[1]-1,]
   mtext(side=bottom, 
-        at = wa$w,
+        at = wa$w[2:length(wa$w)],
         line=2.3,
-        text=wa$age, col=colAgebased)
+        text=wa$age[2:length(wa$w)], col=colAgebased)
 }
 
 plotGrowth = function() {
@@ -373,4 +373,4 @@ plotGrowthOld = function(p=baseparameters(W=5000)) {
 #pdfplot('../demography.pdf',plotDemography, width=doublewidth, height=2*height)
 #pdfplot('../growth.pdf', plotGrowth, width=singlewidth, height=height)
 #pdfplot('../predictions.pdf', plotPredictions, width=doublewidth, height=height)
-pdfplot('../traitspace.pdf', plotTraitsFishbase, width=1.5*singlewidth, height=height)
+#pdfplot('../traitspace.pdf', plotTraitsFishbase, width=1.5*singlewidth, height=height)
