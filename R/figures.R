@@ -68,7 +68,7 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   cat("Weight at recruitment: ", wRecruitment, '\n')
   N_at_age2 = N$NprR * N$g
 
-  defaultplot(mfcol=c(2,2), oma=c(2,0.4,0.8,0.7))
+  defaultplot(mfcol=c(2,2), oma=c(2,0.4,0.8,3))
   
   #
   # Age based:
@@ -76,15 +76,15 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   #defaultplotvertical(2)
   # Numbers:
   semilogypanel(xlim=age, ylim=c(1,1e-3),
-                ylab="Numbers", xaxis=FALSE)
+                ylab="Numbers (#)", xaxis=FALSE)
   Numbers = N$NprR*N$g
   lines(age_at_w, Numbers/Numbers[ix_age_1] , lw=3, col=colAgebased)
   vline(ageMaturation(p$W,p))
   mtext("Age based",side=top)
-  makepanellabel()
+  makepanellabel('  a')
   # Biomass:
   semilogypanel(xlim=age, ylim=c(1,50),
-                ylab="Relative biomass (g/g)", xlab="Age")
+                ylab="Biomass (g)", xlab="Age")
   Biomass = Numbers*N$w
   lines(age_at_w, Biomass/Biomass[ix_age_1], lw=3, col=colAgebased)
   vline(ageMaturation(p$W,p))
@@ -108,16 +108,37 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   # Size-based:
   #
   # Number spectrum:
-  loglogpanel(xlim=c(wRecruitment, p$W), ylim=c(1,1e-4),
-              ylab="Number spectrum (#/g)", xaxis=FALSE)
+  #loglogpanel(xlim=c(wRecruitment, p$W), ylim=c(1,1e-4),
+  #            ylab="Number spectrum (#/g)", xaxis=FALSE)
+  ylim=c(1e-4,1)
+  xlim=c(wRecruitment, p$W)
+  plot(1, type='n', log='xy',
+       ylim=ylim, 
+       xlim=xlim, axes=FALSE, xlab='',ylab='', par(new=FALSE), xaxs='r')
+  logaxes(bottom, lim=xlim, bExponential = TRUE, labels=FALSE, pow=NA)
+  logaxes(right, lim=ylim, bExponential = TRUE, labels=TRUE, pow=NA)
+  box(lwd=axis.lwd)
+  mtext(side=right, line=1.5, "Number spectrum (#/g)")
+  
   lines(N$w, N$NprR/N$NprR[ix_age_1], lw=3)
   vline(p$etaM*p$W)
   mtext("Size based",side=top)
-  makepanellabel()
+  makepanellabel('     c')
   
   # Sheldon biomass:
-  loglogpanel(xlim=c(wRecruitment, p$W), ylim=c(1,1000),
-              xlab="Weight (g)", ylab="Sheldon spectrum (g/g)")
+  #loglogpanel(xlim=c(wRecruitment, p$W), ylim=c(1,1000),
+  #            xlab="Weight (g)", ylab="Sheldon spectrum (g/g)")
+  ylim=c(1,1000)
+  xlim=c(wRecruitment, p$W)
+  plot(1, type='n', log='xy',
+       ylim=ylim, 
+       xlim=xlim, axes=FALSE, xlab='',ylab='', par(new=FALSE), xaxs='r')
+  logaxes(bottom, lim=xlim, bExponential = TRUE, labels=TRUE, pow=NA)
+  logaxes(right, lim=ylim, bExponential = TRUE, labels=TRUE, pow=NA)
+  box(lwd=axis.lwd)
+  mtext(side=right, line=1.5, "Sheldon spectrum (g)")
+  mtext(side=bottom, line=1.1, "Weight (g)")
+  
   Sheldon = N$NprR*N$w^2
   lines(N$w, Sheldon/Sheldon[ix_age_1], lw=3)
   vline(p$etaM*p$W)
@@ -370,7 +391,7 @@ plotGrowthOld = function(p=baseparameters(W=5000)) {
   
 }
 
-#pdfplot('../demography.pdf',plotDemography, width=doublewidth, height=2*height)
+pdfplot('../demography.pdf',plotDemography, width=0.8*doublewidth, height=0.8*2*height)
 #pdfplot('../growth.pdf', plotGrowth, width=singlewidth, height=height)
 #pdfplot('../predictions.pdf', plotPredictions, width=doublewidth, height=height)
 #pdfplot('../traitspace.pdf', plotTraitsFishbase, width=1.5*singlewidth, height=height)
