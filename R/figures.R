@@ -1,60 +1,14 @@
-#library(devtools)
-#install_github("Kenhasteandersen/FishSizeSpectrum")
+#
+# Download and install the FishSizeSpectrum package:
+#
+library(devtools)
+install_github("Kenhasteandersen/FishSizeSpectrum")
 library(fishsizespectrum)
+
 source("plottools.R")
 
 colAgebased = "blue"
 
-plotCompareDemography <- function(p=baseparameters(W=5000), F=0.3) {
-  # Shorthands:
-  n = baseparameters()$n
-  W = p$W
-  #
-  # Calculate age-based parameters from size-based parameters:
-  #
-  Linf = weight2length(W)
-  K = p$A * Linf^(-3/4) / (3*p$c^(1/4) * p$etaM^(-1/12) )
-  M = 3*p$a * p$etaM^(-1/3)*K
-  tmat = p$etaM^(1-n)/(p$A*(1-n)) * (W)^(1-n)
-  alpha = p$epsR*p$epsEgg/p$w0 * p$A * (W)^(n-1)
-  #
-  # Calculate age-based demography with size-based mortality:
-  # 
-  age_R = 1 
-  age_max = 30
-  age = seq(age_R, age_max)
-  w_age = weightatage(p, age) # W * (1 - exp(-(1-n)*p$A*W^(n-1)*age))^(1/(1-n))
-  F_age = 0*age
-  P_age = 0*age
-  P_age[1] = 1
-  #P_age[2:(age_max)] = cumprod( exp(-M - F_age[2:(age_max)]) )
-  P_age[1:(age_max)] = cumprod( exp(-p$a*p$A*w_age$w[1:(age_max)]^(-0.25)) )
-  P_age = P_age/P_age[1]
-  SSB_age = sum( psi( w_age/(p$etaM*W)) * w_age * P_age)
-  R_age = alpha*SSB_age / (alpha*SSB_age + 1)
-  N_age = R_age*P_age
-  #
-  # Calculate size-based demography
-  #
-  wR = w_age[1]  # Use year 1 for size at recruitment
-  N = spectrum(p) # Calculate spectrum
-  g = N$g # Extract the growth rate (mass per year)
-  N_w_age = N$NprR * g # Calculate the numbers in 1-year wide intervals
-  w_at_age = weightatage(p, seq(0, 200, length.out = 5000))
-  age_at_w = interp1(w_at_age$w, w_at_age$age, N$w)
-  ix_age_1 = which(age_at_w>=1)[1]
-  #
-  # Plot age-based demography
-  #
-  defaultplothorizontal(2)
-  semilogypanel(xlim=c(0, age_max), ylim=c(0.00001,1),
-                xlab="Age", ylab="N/R_{max}")
-  barplot(P_age, col="white", log="y", add=TRUE)
-  lines(age_at_w, N_w_age/N_w_age[ix_age_1])
-  lines(age, exp(-4*p$a*cumsum(1/age)), col='blue') # Only juvenile
-  lines(age, 16^-p$a* age^(-4*p$a),col='green') # Only juvenile
-  lines(age, ((p$A*age/4)^4)^(-p$a),col='red')
-}
 
 plotDemography <- function(p=baseparameters(W=5000)) {
   N = spectrum(p, nGrid=10000) # Calculate spectrum
@@ -75,7 +29,7 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   #
   #defaultplotvertical(2)
   # Numbers:
-  semilogypanel(xlim=age, ylim=c(1,1e-3),
+  semilogypanel(xlim=age_at_w, ylim=c(1,1e-3),
                 ylab="Numbers (#)", xaxis=FALSE)
   Numbers = N$NprR*N$g
   lines(age_at_w, Numbers/Numbers[ix_age_1] , lw=3, col=colAgebased)
@@ -83,7 +37,7 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   mtext("Age based",side=top)
   makepanellabel('  a')
   # Biomass:
-  semilogypanel(xlim=age, ylim=c(1,50),
+  semilogypanel(xlim=age_at_w, ylim=c(1,50),
                 ylab="Biomass (g)", xlab="Age")
   Biomass = Numbers*N$w
   lines(age_at_w, Biomass/Biomass[ix_age_1], lw=3, col=colAgebased)
@@ -249,7 +203,7 @@ plotPredictions = function(p=baseparameters(), n=25) {
   # Plot FIE:
   #
   semilogxpanel(xlim=W, ylim=c(-0.0006, 0.0),
-                xlab="", ylab="Evolution of maturation (yr^{-1})")
+                xlab="", ylab="Evolution of \\textit{w}_{\\mathrm{mat}} (yr^{-1})")
   lines(W, dwmat_dt[,1], lw=1, col=stdgrey)
   lines(W, dwmat_dt[,2], lw=3)
   lines(W, dwmat_dt[,3], lw=2, col=stdgrey)
@@ -264,21 +218,21 @@ plotTraitsFishbase <- function() {
   #
   # Download fishbase
   #
-  require(rfishbase)
-  require(taxize)
-  if (!file.exists('../data/fishbasedata.Rdata')) {
-    fish_list <- species_list()
-    flatfish_list <- species_list(Order="Pleuronectiformes")
-    elasmobranch_list <- species_list(Class="Elasmobranchii")
-    acti_list <- species_list(Class="Actinopterygii")
-    clupeid_list <- species_list(Order="Clupeiformes")
-    fish <- species(fish_list)
-    growth <- popgrowth(fish_list)
-    
-    save(
-      fish_list, flatfish_list, clupeid_list, elasmobranch_list, acti_list, fish, growth, 
-      file='../data/fishbasedata.Rdata')
-  }
+  #require(rfishbase)
+  #require(taxize)
+  #if (!file.exists('../data/fishbasedata.Rdata')) {
+  #  fish_list <- species_list()
+  #  flatfish_list <- species_list(Order="Pleuronectiformes")
+  #  elasmobranch_list <- species_list(Class="Elasmobranchii")
+  #  acti_list <- species_list(Class="Actinopterygii")
+  #  clupeid_list <- species_list(Order="Clupeiformes")
+  #  fish <- species(fish_list)
+  #  growth <- popgrowth(fish_list)
+  #  
+  #  save(
+  #    fish_list, flatfish_list, clupeid_list, elasmobranch_list, acti_list, fish, growth, 
+  #    file='../data/fishbasedata.Rdata')
+  #}
   #
   # .. or load it:
   #
@@ -344,7 +298,7 @@ plotTraitsFishbase <- function() {
   # ixGoby <- which( growth$sciname %in% goby_list )
   # points(Woo[ixGoby], A[ixGoby], pch=dots, cex=factor*sqrt(r[ixGoby]), col="green" )
   # 
-  # # Highlight Gasterosteidae (sticklbacks)
+  # # Highlight Gasterosteidae (sticklebacks)
   # stickle_list <- species_list(Family="Gasterosteidae")
   # ixStickle <- which( growth$sciname %in% stickle_list )
   # points(Woo[ixStickle], A[ixStickle], pch=dots, cex=factor*sqrt(r[ixStickle]), col="magenta" )
@@ -368,30 +322,8 @@ plotTraitsFishbase <- function() {
   loglogpanel(xlim=c(.7, 1e6), ylim=c(0.5, 150), bExponential=TRUE, new=TRUE)
 }
 
- 
-plotGrowthOld = function(p=baseparameters(W=5000)) {
-  # Calc weight-at-age from the bi-phasic equation:
-  weight_biphasic = weightatage(p)
-  age = weight_biphasic$age
-  # ...and from von Bertalanffy:
-  Linf = weight2length(p$W)
-  K = calcK(p$A, Linf, p)
-  weight_vonB = p$W*( 1 - exp(-(1-p$n)*p$A*p$W^(p$n-1)*age) )^(1/(1-p$n))
-  weight_vonB = weight( Linf*( 1-exp(-K*age)) )
-
-  defaultplot()
-  defaultpanel(xlim=c(0,20), 
-               ylim=c(0,p$W*1.05),
-               xlab="Age (years)",
-               ylab="Weight (g)")
-  
-  lines(age, weight_vonB, lwd=3)
-  lines(age, weight_biphasic$w, lwd=3, col=stdgrey)
-  vline(ageMaturation(p$W,p))
-  
-}
 
 pdfplot('../demography.pdf',plotDemography, width=0.8*doublewidth, height=0.8*2*height)
-#pdfplot('../growth.pdf', plotGrowth, width=singlewidth, height=height)
-#pdfplot('../predictions.pdf', plotPredictions, width=doublewidth, height=height)
-#pdfplot('../traitspace.pdf', plotTraitsFishbase, width=1.5*singlewidth, height=height)
+pdfplot('../growth.pdf', plotGrowth, width=singlewidth, height=height)
+pdfplot('../predictions.pdf', plotPredictions, width=doublewidth, height=0.8*height)
+pdfplot('../traitspace.pdf', plotTraitsFishbase, width=1.5*singlewidth, height=height)
