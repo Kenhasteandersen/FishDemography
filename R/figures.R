@@ -21,7 +21,7 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   wRecruitment = N$w[ix_age_1]
   cat("Weight at recruitment: ", wRecruitment, '\n')
   N_at_age2 = N$NprR * N$g
-
+  
   defaultplot(mfcol=c(2,2), oma=c(2,0.4,0.8,3))
   
   #
@@ -29,7 +29,7 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   #
   #defaultplotvertical(2)
   # Numbers:
-  semilogypanel(xlim=age_at_w, ylim=c(1,1e-3),
+  semilogypanel(xlim=c(0,20), ylim=c(1,1e-3),
                 ylab="Numbers (#)", xaxis=FALSE)
   Numbers = N$NprR*N$g
   lines(age_at_w, Numbers/Numbers[ix_age_1] , lw=3, col=colAgebased)
@@ -37,7 +37,7 @@ plotDemography <- function(p=baseparameters(W=5000)) {
   mtext("Age based",side=top)
   makepanellabel('  a')
   # Biomass:
-  semilogypanel(xlim=age_at_w, ylim=c(1,50),
+  semilogypanel(xlim=c(0,20), ylim=c(1,50),
                 ylab="Biomass (g)", xlab="Age")
   Biomass = Numbers*N$w
   lines(age_at_w, Biomass/Biomass[ix_age_1], lw=3, col=colAgebased)
@@ -322,8 +322,116 @@ plotTraitsFishbase <- function() {
   loglogpanel(xlim=c(.7, 1e6), ylim=c(0.5, 150), bExponential=TRUE, new=TRUE)
 }
 
+plotEmergentDensityDependence = function(W=5000, n=25) {
+  
+  p_std = paramConsumerResourcemodel(W, 1e-8) # std. model driven by SR relation
+  r_std = runspectrum(p_std)
+  
+  p_comp = paramConsumerResourcemodel(W, 100) # Fully driven by competition
+  p_comp$thetaFish = 0 # No cannibalism
+  r_comp = runspectrum(p_comp)
+  
+  p_can = paramConsumerResourcemodel(W, 100) # mainly driven by cannibalism
+  r_can = runspectrum(p_can)
+  
+  defaultplot(mfcol=c(4,1))
+  #
+  # Resource
+  #
+  wrange = c(0.1,W)
+  loglogpanel(xlim = wrange, 
+              ylim=c(1000, 1e5),
+              ylab = "Resource (g)",
+              xlab = "Weight (g)", label=TRUE)
 
-pdfplot('../demography.pdf',plotDemography, width=0.8*doublewidth, height=0.8*2*height)
-pdfplot('../growth.pdf', plotGrowth, width=singlewidth, height=height)
-pdfplot('../predictions.pdf', plotPredictions, width=doublewidth, height=0.8*height)
-pdfplot('../traitspace.pdf', plotTraitsFishbase, width=1.5*singlewidth, height=height)
+  wR = r$resource$wR
+  NR = r$resource$NR/r$N[r$nSave,1,1]*(wR/p$w0)^2
+  KR = p$KR * wR^(p$lambdaR)/r$N[r$nSave,1,1]*(wR/p$w0)^2
+  #ribbon(wR, NR, KR)
+  lines(wR, NR, lwd=2, col=black)
+  lines(wR, KR, lwd=2, col=black, lty=dashed)
+  
+  #
+  # Spectra
+  #
+  wrange = c(0.1,W)
+  loglogpanel(xlim = wrange, 
+              ylim=c(.5, 1e6),
+              ylab = "Spectrum (g)",
+              xlab = "Weight (g)", label=TRUE)
+ 
+  
+  w = r_std$fish$w
+  Nstd = r_std$N[r$nSave,1,]/r_std$N[r$nSave,1,1]*(w/p_std$w0)^2
+  N = r_comp$N[r_comp$nSave,1,]/r_comp$N[r$nSave,1,1]*(w/p_std$w0)^2
+  #N_can = r_can$N[r$nSave,1,]/r_can$N[r$nSave,1,1]*(w/p_std$w0)^2
+  #ribbon(w, ymax=N, ymin=Nstd)
+  lines(w, Nstd, lty=dashed, lwd=2)
+  lines(w, N, lwd=2)
+  #lines(w, N_can, lwd=2, col=stdgrey)
+  
+  legend("bottomright", 
+         legend=c("Early-life density dep.", "Competition density dep."),
+                  #"Cannibalism density dep."), 
+         lwd=2, lty=c(dashed,1,1),
+         bty="n", col=c(black,black,stdgrey))
+  #
+  # Weight at age.
+  #
+  defaultpanel(xlim = c(0,30),
+               ylim = c(0,W),
+               xlab = "Age",
+               ylab = "Weight (g)",
+               label = TRUE)
+  
+  wa_std = calcWeightAtAge(p_std, r_std) # calc without DD
+  wa_comp = calcWeightAtAge(p_comp, r)
+  wa_can = calcWeightAtAge(p_can, r_can)
+  
+  #ribbon(wa$ages, wa_std$w, wa$w)
+  lines(wa_std$ages, wa_std$w, lwd=2, lty=dashed)
+  lines(wa_comp$ages, wa_comp$w, lwd=2)
+  #lines(wa_can$ages, wa_can$w, lwd=2, col=stdgrey)
+  #
+  # Yield curves:
+  #
+  F = seq(0,1.5,length.out = n)
+  Yield_std = 0*F
+  Yield_comp = 0*F
+  Yield_can = 0*F
+  for (i in 2:length(F)) {
+    # Early-life DD:
+    p_std$F = F[i]
+    r_std = runspectrum(p_std, r_std)
+    Yield_std[i] = trapz(r_std$w, r_std$N[100,1,]*r_std$w*r_std$muF)
+    
+    # Competition DD:
+    p_comp$F = F[i]
+    r_comp = runspectrum(p_comp, r_comp)
+    Yield_comp[i] = trapz(r_comp$w, r_comp$N[100,1,]*r_comp$w*r_comp$muF)
+    
+    # Competition DD:
+    p_can$F = F[i]
+    r_can = runspectrum(p_can, r_can)
+    Yield_can[i] = trapz(r_can$w, r_can$N[100,1,]*r_can$w*r_can$muF)
+  }
+  
+  defaultpanel(xlim = F,
+               ylim = c(0,1),
+               xlab = "Fishing mortality (yr$^{-1})",
+               ylab = "Relative yield",
+               label = TRUE)
+  lines(F, Yield_std/max(Yield_std), lwd=2, lty=dashed)
+  lines(F, Yield_comp/max(Yield_comp), lwd=2)
+  #lines(F, Yield_can/max(Yield_can), lwd=2, col=stdgrey)
+}
+
+
+
+plotAll = function() {
+  pdfplot('../demography.pdf',plotDemography, width=0.8*doublewidth, height=0.8*2*height)
+  pdfplot('../growth.pdf', plotGrowth, width=singlewidth, height=height)
+  pdfplot('../predictions.pdf', plotPredictions, width=doublewidth, height=0.8*height)
+  pdfplot('../traitspace.pdf', plotTraitsFishbase, width=1.5*singlewidth, height=height)
+  pdfplot('../emergent.pdf', plotEmergentDensityDependence, width=singlewidth, height=3*height)
+}
