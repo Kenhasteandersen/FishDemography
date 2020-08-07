@@ -203,7 +203,7 @@ plotPredictions = function(p=baseparameters(), n=25) {
   # Plot FIE:
   #
   semilogxpanel(xlim=W, ylim=c(-0.0006, 0.0),
-                xlab="", ylab="Evolution of \\textit{w}_{\\mathrm{mat}} (yr^{-1})")
+                xlab="", ylab="Evolution of \\textit{$\\eta}_{\\mathrm{mat}} (yr^{-1})")
   lines(W, dwmat_dt[,1], lw=1, col=stdgrey)
   lines(W, dwmat_dt[,2], lw=3)
   lines(W, dwmat_dt[,3], lw=2, col=stdgrey)
